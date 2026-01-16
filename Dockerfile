@@ -68,6 +68,8 @@ ENV HOST=0.0.0.0
 ENV INSECURE=true
 ENV INIT_ENABLED=false
 ENV DISABLE_IPV6=false
+EXPOSE 51820/udp
+EXPOSE 51821/tcp
 
 LABEL org.opencontainers.image.source=https://github.com/wg-easy/wg-easy
 
