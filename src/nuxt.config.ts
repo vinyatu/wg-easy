@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@eschricht/nuxt-color-mode',
     'radix-vue/nuxt',
+    '@vueuse/nuxt',
     '@nuxt/eslint',
   ],
   colorMode: {
@@ -44,6 +45,11 @@ export default defineNuxtConfig({
         name: 'Español',
       },
       {
+        code: 'it',
+        language: 'it-IT',
+        name: 'Italiano',
+      },
+      {
         code: 'fr',
         language: 'fr-FR',
         name: 'Français',
@@ -72,6 +78,11 @@ export default defineNuxtConfig({
         code: 'zh-HK',
         language: 'zh-HK',
         name: '繁體中文（香港）',
+      },
+      {
+        code: 'zh-TW',
+        language: 'zh-TW',
+        name: '正體中文 (台灣)',
       },
       {
         code: 'pl',

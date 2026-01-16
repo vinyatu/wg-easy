@@ -5,6 +5,9 @@ import type { InterfaceType } from '#db/repositories/interface/types';
 
 const WG_DEBUG = debug('WireGuard');
 
+const generateRandomHeaderValue = () =>
+  Math.floor(Math.random() * 2147483642) + 5;
+
 class WireGuard {
   /**
    * Save and sync config
@@ -61,10 +64,15 @@ class WireGuard {
     WG_DEBUG('Config synced successfully.');
   }
 
-  async getClientsForUser(userId: ID) {
+  async getClientsForUser(userId: ID, filter?: string) {
     const wgInterface = await Database.interfaces.get();
 
-    const dbClients = await Database.clients.getForUser(userId);
+    let dbClients;
+    if (filter?.trim()) {
+      dbClients = await Database.clients.getForUserFiltered(userId, filter);
+    } else {
+      dbClients = await Database.clients.getForUser(userId);
+    }
 
     const clients = dbClients.map((client) => ({
       ...client,
@@ -104,9 +112,16 @@ class WireGuard {
     return clientDump;
   }
 
-  async getAllClients() {
+  async getAllClients(filter?: string) {
     const wgInterface = await Database.interfaces.get();
-    const dbClients = await Database.clients.getAllPublic();
+
+    let dbClients;
+    if (filter?.trim()) {
+      dbClients = await Database.clients.getAllPublicFiltered(filter);
+    } else {
+      dbClients = await Database.clients.getAllPublic();
+    }
+
     const clients = dbClients.map((client) => ({
       ...client,
       latestHandshakeAt: null as Date | null,
@@ -151,11 +166,32 @@ class WireGuard {
 
   async getClientQRCodeSVG({ clientId }: { clientId: ID }) {
     const config = await this.getClientConfiguration({ clientId });
-    return encodeQR(config, 'svg', {
-      ecc: 'high',
-      scale: 2,
-      encoding: 'byte',
-    });
+    const ECMode = ['high', 'quartile', 'medium', 'low'] as const;
+    for (const ecc of ECMode) {
+      try {
+        return encodeQR(config, 'svg', {
+          ecc,
+          scale: 2,
+          encoding: 'byte',
+        });
+      } catch (err) {
+        if (!(err instanceof Error && err.message === 'Capacity overflow')) {
+          throw err;
+        }
+        // retry with lower ecc
+      }
+    }
+    throw new Error(
+      'Failed to generate QR code: Capacity overflow at all ECC levels'
+    );
+  }
+
+  cleanClientFilename(name: string): string {
+    return name
+      .replace(/[^a-zA-Z0-9_=+.-]/g, '-')
+      .replace(/(-{2,}|-$)/g, '-')
+      .replace(/-$/, '')
+      .substring(0, 32);
   }
 
   async Startup() {
@@ -176,6 +212,24 @@ class WireGuard {
       wgInterface = await Database.interfaces.get();
       WG_DEBUG('New Wireguard Keys generated successfully.');
     }
+
+    if (wgInterface.h1 === 0) {
+      WG_DEBUG('Generating random AmneziaWG obfuscation parameters...');
+      const headers = new Set<number>();
+
+      while (headers.size < 4) {
+        headers.add(generateRandomHeaderValue());
+      }
+      const [h1, h2, h3, h4] = Array.from(headers);
+
+      wgInterface.h1 = h1!;
+      wgInterface.h2 = h2!;
+      wgInterface.h3 = h3!;
+      wgInterface.h4 = h4!;
+
+      Database.interfaces.update(wgInterface);
+    }
+
     WG_DEBUG(`Starting Wireguard Interface ${wgInterface.name}...`);
     await this.#saveWireguardConfig(wgInterface);
     await wg.down(wgInterface.name).catch(() => {});
