@@ -37,4 +37,6 @@ RUN pnpm install
 # Copy Project
 COPY src ./
 
+EXPOSE 51821/tcp
+EXPOSE 51821/udp
 ENTRYPOINT [ "pnpm", "run" ]
