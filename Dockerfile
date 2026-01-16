@@ -65,7 +65,7 @@ RUN update-alternatives --install /usr/sbin/ip6tables ip6tables /usr/sbin/ip6tab
 ENV DEBUG=Server,WireGuard,Database,CMD
 ENV PORT=51821
 ENV HOST=0.0.0.0
-ENV INSECURE=false
+ENV INSECURE=true
 ENV INIT_ENABLED=false
 ENV DISABLE_IPV6=false
 
