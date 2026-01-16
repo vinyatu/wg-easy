@@ -31,7 +31,6 @@ ENV INIT_ENABLED=false
 ENV DISABLE_IPV6=false
 EXPOSE 51820/udp
 EXPOSE 51821/tcp
-EXPOSE 443
 
 # Install Dependencies
 COPY src/package.json src/pnpm-lock.yaml ./
